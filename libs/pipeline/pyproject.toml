@@ -1,0 +1,29 @@
+[project]
+name = "tennis-heatmap-pipeline"
+version = "0.1.0"
+description = "Full video pipeline orchestration for the tennis heatmap system"
+requires-python = ">=3.11"
+dependencies = [
+    "tennis-heatmap-core",
+    "tennis-heatmap-detectors",
+    "tennis-heatmap-trackers",
+    "tennis-heatmap-court",
+    "tennis-heatmap-heatmap",
+    "opencv-python-headless>=4.9",
+    "numpy>=1.26",
+    "tqdm>=4.66",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tennis_heatmap"]
+
+[tool.uv.sources]
+tennis-heatmap-core = { workspace = true }
+tennis-heatmap-detectors = { workspace = true }
+tennis-heatmap-trackers = { workspace = true }
+tennis-heatmap-court = { workspace = true }
+tennis-heatmap-heatmap = { workspace = true }

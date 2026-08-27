@@ -1,0 +1,43 @@
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: tennis-heatmap:latest
+    container_name: tennis-heatmap-api
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Persist output heatmaps on the host
+      - ./output:/tmp/tennis_heatmap_output
+      # Mount custom weights directory
+      - ./weights:/app/weights:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # Optional: GPU-enabled variant (uncomment if you have NVIDIA Docker)
+  # api-gpu:
+  #   extends:
+  #     service: api
+  #   container_name: tennis-heatmap-api-gpu
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: 1
+  #             capabilities: [gpu]
+  #   environment:
+  #     - PYTHONUNBUFFERED=1
+  #     - CUDA_VISIBLE_DEVICES=0
+
+volumes:
+  output:
+  weights:

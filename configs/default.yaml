@@ -1,0 +1,51 @@
+# tennis-heatmap default configuration
+# All fields shown with their default values.
+# Override any field in a derived config file or via CLI flags.
+
+pipeline:
+  player_detector:
+    name: "yolov8_player"
+    model_path: null           # null = use auto-downloaded yolov8n.pt
+    confidence_threshold: 0.30 # 0.3 catches small/distant players in broadcast
+    iou_threshold: 0.45
+    device: "cpu"              # change to "cuda" for GPU
+    classes: [0]               # COCO class 0 = person
+
+  ball_detector:
+    name: "yolov8_ball"
+    model_path: null           # provide path to fine-tuned ball model
+    confidence_threshold: 0.20 # low threshold — generic model for ball is imprecise
+    iou_threshold: 0.3
+    device: "cpu"
+
+  player_tracker:
+    name: "bytetrack"          # change to "deepsort" etc. to swap tracker
+    track_thresh: 0.5
+    track_buffer: 30           # frames to keep a lost player track alive
+    match_thresh: 0.8
+
+  ball_tracker:
+    name: "bytetrack"
+    track_thresh: 0.4
+    track_buffer: 5            # short buffer — ball reappears quickly
+    match_thresh: 0.7
+
+  court_detector:
+    name: "hough_lines"        # classical CV; swap to "deep_keypoint" when available
+    num_keypoints: 12
+
+heatmap:
+  colormap: "hot"              # matplotlib colormap name
+  kde_bandwidth: 0.5           # KDE bandwidth in court metres
+  alpha: 0.70                  # heatmap overlay opacity
+  min_positions: 10
+  output_formats: ["png"]      # ["png", "pdf"]
+  dpi: 150
+
+video:
+  max_frames: null             # null = process all frames
+  skip_frames: 0               # 0 = process every frame; 1 = every other frame
+  resize_width: 1280           # always resize to 1280px wide for consistent speed
+                               # (players are still visible; homography still works)
+
+output_dir: "./output"

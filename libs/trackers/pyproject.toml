@@ -1,0 +1,21 @@
+[project]
+name = "tennis-heatmap-trackers"
+version = "0.1.0"
+description = "Pluggable tracker implementations — ByteTrack (default) and stubs"
+requires-python = ">=3.11"
+dependencies = [
+    "tennis-heatmap-core",
+    "trackers>=0.3",
+    "supervision>=0.22",
+    "numpy>=1.26",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tennis_heatmap"]
+
+[tool.uv.sources]
+tennis-heatmap-core = { workspace = true }

@@ -1,0 +1,23 @@
+[project]
+name = "tennis-heatmap-cli"
+version = "0.1.0"
+description = "Command-line interface for the tennis heatmap system"
+requires-python = ">=3.11"
+dependencies = [
+    "tennis-heatmap-pipeline",
+    "click>=8.1",
+    "rich>=13.7",
+]
+
+[project.scripts]
+tennis-heatmap = "cli.main:cli"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cli"]
+
+[tool.uv.sources]
+tennis-heatmap-pipeline = { workspace = true }

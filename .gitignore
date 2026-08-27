@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# uv / virtual envs
+.venv/
+*.venv
+uv.lock
+
+# Model weights (large binary files — add to git-lfs or ignore)
+weights/*.pt
+weights/*.pth
+weights/*.onnx
+
+# Output
+output/
+*.png
+*.pdf
+
+# Uploads / temp
+uploads/
+/tmp/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Env files
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db

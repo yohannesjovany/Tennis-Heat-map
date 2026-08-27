@@ -1,0 +1,49 @@
+# YOLOv8 + ByteTrack preset — GPU-accelerated, high accuracy
+# Requires: ultralytics Enterprise License for commercial use (AGPL-3.0)
+
+pipeline:
+  player_detector:
+    name: "yolov8_player"
+    model_path: null           # auto-downloads yolov8n.pt on first run
+    confidence_threshold: 0.5
+    iou_threshold: 0.45
+    device: "cuda"             # GPU inference
+    classes: [0]
+
+  ball_detector:
+    name: "yolov8_ball"
+    model_path: "weights/yolov8s_tennis_ball.pt"  # fine-tuned model
+    confidence_threshold: 0.25
+    iou_threshold: 0.3
+    device: "cuda"
+
+  player_tracker:
+    name: "bytetrack"          # Apache 2.0 — safe for commercial use
+    track_thresh: 0.5
+    track_buffer: 30
+    match_thresh: 0.8
+
+  ball_tracker:
+    name: "bytetrack"
+    track_thresh: 0.35
+    track_buffer: 5
+    match_thresh: 0.65
+
+  court_detector:
+    name: "hough_lines"
+    num_keypoints: 12
+
+heatmap:
+  colormap: "inferno"
+  kde_bandwidth: 0.4
+  alpha: 0.75
+  min_positions: 15
+  output_formats: ["png", "pdf"]
+  dpi: 200
+
+video:
+  max_frames: null
+  skip_frames: 0
+  resize_width: 1280
+
+output_dir: "./output"
