@@ -137,6 +137,36 @@ class CourtHomography:
         result = cv2.perspectiveTransform(pts, self.H)
         return result.reshape(-1, 2)
 
+    def unproject_point(self, court_x: float, court_y: float) -> Optional[Tuple[float, float]]:
+        """Unproject a single court coordinate back to pixel space.
+
+        Returns:
+            ``(px, py)``, or ``None`` if not calibrated.
+        """
+        if not self.is_calibrated or self.H_inv is None:
+            return None
+
+        pt = np.array([[[court_x, court_y]]], dtype=np.float32)
+        result = cv2.perspectiveTransform(pt, self.H_inv)
+        px, py = result[0, 0]
+        return (float(px), float(py))
+
+    def unproject_points(self, points: np.ndarray) -> Optional[np.ndarray]:
+        """Unproject multiple court coordinates back to pixel space.
+
+        Args:
+            points: Shape (N, 2) float array of (court_x, court_y) metres.
+
+        Returns:
+            Shape (N, 2) float array of (px, py), or ``None`` if not calibrated.
+        """
+        if not self.is_calibrated or self.H_inv is None:
+            return None
+
+        pts = points.reshape(-1, 1, 2).astype(np.float32)
+        result = cv2.perspectiveTransform(pts, self.H_inv)
+        return result.reshape(-1, 2)
+
     def project_to_court_coord(
         self,
         px: float,

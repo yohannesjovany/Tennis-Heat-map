@@ -100,7 +100,6 @@ class TennisHeatmapPipeline:
 
         # Reset stateful components for this run
         comp.player_tracker.reset()
-        comp.ball_tracker.reset()
         comp.accumulator.reset()
 
         cap = cv2.VideoCapture(str(video_path))
@@ -121,7 +120,6 @@ class TennisHeatmapPipeline:
 
         # --- Warmup detectors ---
         comp.player_detector.warmup()
-        comp.ball_detector.warmup()
 
         frame_idx = 0
         processed = 0
@@ -180,10 +178,6 @@ class TennisHeatmapPipeline:
             player_detections = comp.player_detector.detect(frame, frame_idx)
             player_tracks = comp.player_tracker.update(player_detections, frame_idx)
 
-            # --- Ball detection + tracking ---
-            ball_detections = comp.ball_detector.detect(frame, frame_idx)
-            ball_tracks = comp.ball_tracker.update(ball_detections, frame_idx)
-
             # --- Coordinate projection + accumulation ---
             if calibrated:
                 frame_player_added = 0
@@ -201,24 +195,12 @@ class TennisHeatmapPipeline:
                         comp.accumulator.add_player_coord(coord)
                         frame_player_added += 1
 
-                frame_ball_added = 0
-                for track in ball_tracks:
-                    px, py = track.center_point
-                    coord = comp.homography.project_to_court_coord(
-                        px, py, frame_index=frame_idx, track_id=track.track_id
-                    )
-                    if coord is not None and coord.is_near_court(margin_m=1.0):
-                        comp.accumulator.add_ball_coord(coord)
-                        frame_ball_added += 1
-
                 # Log a diagnostic every 100 frames to help spot issues early.
                 if processed % 100 == 1:
                     logger.debug(
-                        "Frame %d: player_detections=%d player_tracks=%d added=%d | "
-                        "ball_detections=%d ball_tracks=%d added=%d",
+                        "Frame %d: player_detections=%d player_tracks=%d added=%d",
                         frame_idx,
                         len(player_detections), len(player_tracks), frame_player_added,
-                        len(ball_detections), len(ball_tracks), frame_ball_added,
                     )
 
             processed += 1
@@ -295,20 +277,9 @@ class TennisHeatmapPipeline:
             )
             player_heatmaps[key] = img
 
-        # Ball heatmap
-        ball_pos = comp.accumulator.get_ball()
-        ball_density = comp.kde_generator.generate(
-            ball_pos.as_array(), min_positions=hm_cfg.min_positions
-        )
-        ball_img = comp.renderer.render(
-            ball_density,
-            title="Ball — Position Heatmap",
-            subtitle=f"{video_path.name} | {ball_pos.count} samples",
-        )
-
         result = HeatmapResult(
             player_heatmaps=player_heatmaps,
-            ball_heatmap=ball_img,
+            ball_heatmap=None,
             metadata={
                 "video": str(video_path),
                 "run_id": run_id,
@@ -316,13 +287,13 @@ class TennisHeatmapPipeline:
                 "source_fps": source_fps,
                 "player_tracks": list(player_heatmaps.keys()),
                 "player_positions": comp.accumulator.total_player_positions(),
-                "ball_positions": comp.accumulator.total_ball_positions(),
+                "ball_positions": 0,
                 "homography_calibrated": comp.homography.is_calibrated,
                 "homography_error_m": comp.homography.calibration_error_m(),
                 "player_detector": str(comp.player_detector),
-                "ball_detector": str(comp.ball_detector),
+                "ball_detector": "Disabled",
                 "player_tracker": str(comp.player_tracker),
-                "ball_tracker": str(comp.ball_tracker),
+                "ball_tracker": "Disabled",
             },
         )
 

@@ -31,17 +31,15 @@ import numpy as np
 from tennis_heatmap.core.config import PipelineConfig
 from tennis_heatmap.core.models.detection import Detection
 from tennis_heatmap.core.models.track import Track
-from tennis_heatmap.court.court_template import COURT_LENGTH_M
+from tennis_heatmap.court.court_template import COURT_LENGTH_M, COURT_WIDTH_M
 
 logger = logging.getLogger(__name__)
 
 # Court midline for player assignment
 _MIDLINE_Y = COURT_LENGTH_M / 2.0
 
-# Colors (BGR for OpenCV)
 COLOR_P1 = (0, 200, 255)     # orange-yellow — Player 1 (near half)
 COLOR_P2 = (255, 160, 0)     # cyan-blue    — Player 2 (far half)
-COLOR_BALL = (0, 255, 100)   # green        — ball
 COLOR_COURT = (255, 255, 0)  # cyan         — court keypoints
 COLOR_TEXT_BG = (20, 20, 20) # dark overlay for text
 COLOR_WHITE = (255, 255, 255)
@@ -73,7 +71,6 @@ def _draw_hud(
     calibrated: bool,
     p1_count: int,
     p2_count: int,
-    ball_count: int,
     paused: bool,
     speed: float,
 ) -> None:
@@ -94,7 +91,7 @@ def _draw_hud(
     cv2.putText(frame, left_text, (10, 20), font, 0.5, COLOR_WHITE, 1, cv2.LINE_AA)
 
     # Middle: player counts
-    mid_text = f"P1: {p1_count}  P2: {p2_count}  Ball: {ball_count}"
+    mid_text = f"P1: {p1_count}  P2: {p2_count}"
     cv2.putText(frame, mid_text, (10, 42), font, 0.5, COLOR_WHITE, 1, cv2.LINE_AA)
 
     # Right: calibration status
@@ -161,7 +158,6 @@ def run_viewer(
     speed = 1.0
     p1_total = 0
     p2_total = 0
-    ball_total = 0
     calibrated = False
     saved_count = 0
     prev_time = time.monotonic()
@@ -193,9 +189,19 @@ def run_viewer(
             player_dets = comp.player_detector.detect(frame, frame_idx)
             player_tracks = comp.player_tracker.update(player_dets, frame_idx)
 
-            # --- Ball detection + tracking ---
-            ball_dets = comp.ball_detector.detect(frame, frame_idx)
-            ball_tracks = comp.ball_tracker.update(ball_dets, frame_idx)
+            # --- Draw court polygon ---
+            if calibrated:
+                corners = np.array([
+                    [0, 0],
+                    [COURT_WIDTH_M, 0],
+                    [COURT_WIDTH_M, COURT_LENGTH_M],
+                    [0, COURT_LENGTH_M]
+                ])
+                px_corners = comp.homography.unproject_points(corners)
+                if px_corners is not None:
+                    # Draw a glowing cyan polygon for the court
+                    pts = px_corners.astype(np.int32)
+                    cv2.polylines(frame, [pts], isClosed=True, color=COLOR_COURT, thickness=2, lineType=cv2.LINE_AA)
 
             # --- Draw player boxes ---
             for track in player_tracks:
@@ -218,13 +224,6 @@ def run_viewer(
                         else:
                             p2_total += 1
 
-            # --- Draw ball boxes ---
-            for track in ball_tracks:
-                b = track.bbox
-                label = f"Ball ({track.confidence:.0%})"
-                _draw_box(frame, int(b.x1), int(b.y1), int(b.x2), int(b.y2), label, COLOR_BALL, 1)
-                ball_total += 1
-
             # --- HUD overlay ---
             now = time.monotonic()
             display_fps = 1.0 / max(now - prev_time, 1e-6)
@@ -232,7 +231,7 @@ def run_viewer(
 
             _draw_hud(
                 frame, frame_idx, total_frames, display_fps,
-                calibrated, p1_total, p2_total, ball_total,
+                calibrated, p1_total, p2_total,
                 paused, speed,
             )
 
